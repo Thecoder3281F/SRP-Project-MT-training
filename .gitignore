@@ -1,4 +1,16 @@
 ./processed/
 *.log
-
+.conda/
+.vscode/
+__pycache__/
+MIT/
 *.pt
+*.csv
+MIT_mixed
+MIT_separated
+logs
+
+*tokenizer*
+*t5*
+
+.apikey
