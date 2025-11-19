@@ -1,16 +1,17 @@
-./processed/
+# Generic
 *.log
 .conda/
 .vscode/
 __pycache__/
-MIT/
-*.pt
-*.csv
-MIT_mixed
-MIT_separated
-logs
 
-*tokenizer*
-*t5*
+# Specific
+models/
+models_final/
+datasets_final/
+_*/
+logs/
+
+modelindex.md
+results.md
 
 .apikey
