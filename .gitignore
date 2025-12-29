@@ -6,12 +6,22 @@ __pycache__/
 
 # Specific
 models/
-models_final/
 datasets_final/
 _*/
 logs/
 
-modelindex.md
-results.md
-
 .apikey
+
+output.png
+
+model_predictions/
+
+_*
+
+*.bat
+
+*seeds*
+
+fingerprint*
+
+tokenizers/
