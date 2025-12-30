@@ -51,7 +51,7 @@ def build_preprocess(tokenizer, max_length: int, input_col: str, target_col: str
         if prompt_template is not None:
             inputs = [prompt_template.format(input=inp) for inp in inputs]
         elif prompt_mode == "mtct5":
-            inputs = [f"Predict the product of the following reaction: {inp}" for inp in inputs]
+            inputs = [f"Predict the product of the following reaction: {inp.replace('>', '.') + ">>"}" for inp in inputs] # use separated ordered ds
         elif prompt_mode == "reactiont5":
             transformed = []
             for inp in inputs:
