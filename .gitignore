@@ -18,7 +18,7 @@ model_predictions/
 
 _*
 
-*.bat
+preds/
 
 *seeds*
 

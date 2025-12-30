@@ -167,10 +167,10 @@ def main():
     )
     parser.add_argument("--max_length", type=int, default=350)
     parser.add_argument("--num_beams", type=int, default=10)
-    parser.add_argument("--num_return_sequences", type=int, default=1)
+    parser.add_argument("--num_return_sequences", type=int, default=5)
     parser.add_argument("--max_new_tokens", type=int, default=220)
     parser.add_argument("--per_device_eval_batch_size", type=int, default=32)
-    parser.add_argument("--chunk_size", type=int, default=1000)
+    parser.add_argument("--chunk_size", type=int, default=10000)
     parser.add_argument(
         "--chunks",
         default="all",
