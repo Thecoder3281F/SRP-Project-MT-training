@@ -1,6 +1,5 @@
 import argparse
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, set_seed
-from datasets import concatenate_datasets
 from dataset_helpers import load_custom_mit_dataset, load_chanlam_dataset
 import torch
 
@@ -45,7 +44,7 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=7e-4,
                         help="Learning rate")
 
-    parser.add_argument("--scheduler", type=str, default="constant",
+    parser.add_argument("--scheduler", type=str, default="linear",
                         choices=["linear", "cosine", "constant"],
                         help="LR scheduler type")
 
