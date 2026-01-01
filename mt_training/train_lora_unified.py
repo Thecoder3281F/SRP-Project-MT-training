@@ -100,6 +100,12 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed for reproducibility (default 42)")
 
+    parser.add_argument(
+        "--save_merged_model",
+        action="store_true",
+        help="Whether to save the merged model after training (default: False)",
+    )
+
     return parser.parse_args()
 
 
@@ -121,6 +127,7 @@ def train_lora_model(
     lora_alpha: int,
     lora_dropout: float,
     target_modules=None,
+    save_merged_model: bool = False,
     seed: int = 42,
 ):
     # instantiate base model/tokenizer
@@ -159,18 +166,19 @@ def train_lora_model(
         except Exception as e:
             print(f"Warning: saving adapter failed: {e}")
 
-        try:
-            if hasattr(trainer.model, "merge_and_unload"):
-                merged = trainer.model.merge_and_unload()
-                if merged is not None:
-                    trainer.model = merged
-        except Exception as e:
-            print(f"Warning: merge_and_unload failed: {e}")
+        if save_merged_model:
+            try:
+                if hasattr(trainer.model, "merge_and_unload"):
+                    merged = trainer.model.merge_and_unload()
+                    if merged is not None:
+                        trainer.model = merged
+            except Exception as e:
+                print(f"Warning: merge_and_unload failed: {e}")
 
-        try:
-            trainer.save_model(merged_dir)
-        except Exception as e:
-            print(f"Warning: saving merged model failed: {e}")
+            try:
+                trainer.save_model(merged_dir)
+            except Exception as e:
+                print(f"Warning: saving merged model failed: {e}")
 
     # Call shared training utility; pass post-train callback so adapter can be saved/merged
     train_t5_model(
@@ -287,6 +295,7 @@ if __name__ == "__main__":
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
         target_modules=args.target_modules,
+        save_merged_model=args.save_merged_model,
         seed=args.seed,
     )
     torch.cuda.empty_cache()
