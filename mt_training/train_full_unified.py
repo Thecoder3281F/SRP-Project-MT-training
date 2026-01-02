@@ -1,6 +1,7 @@
 import argparse
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, set_seed
-from dataset_helpers import load_custom_mit_dataset, load_chanlam_dataset
+from datasets import load_dataset
+from dataset_helpers import load_custom_mit_dataset, pick_split
 import torch
 
 from training_utils import train_t5_model
@@ -104,14 +105,61 @@ if __name__ == "__main__":
     # Parse dataset identifier formats
     if args.dataset_type.startswith("chanlam_"):
         _, fmt = args.dataset_type.split("_", 1)
-        input_col = "reactants"
-        target_col = "product1"
-        preprocess = build_preprocess(tokenizer, input_col, target_col)
+        # separator: '>' for separated, '.' for mixed, default ' ' for combined
+        sep = ">" if fmt == "separated" else "." if fmt == "mixed" else " "
 
-        ds = load_chanlam_dataset(ds_type="default", format=fmt)
-        ds = ds.map(preprocess, batched=True, remove_columns=[input_col, target_col])
-        ds_train = ds["train"]
-        ds_val = ds["val"]
+        # Load single HF dataset that contains chanlam splits
+        ds = load_dataset("Thecoder3281f/chanlam-dataset")
+        # normalize split names if needed
+        if "validation" in ds and "val" not in ds:
+            ds["val"] = ds["validation"]
+
+        # use canonical product column
+        target_col = "product_1_canonical_smiles"
+
+        # build preprocess that joins input_reactants and input_reagents
+        def chanlam_preprocess(tokenizer, max_len=350):
+            def _pre(batch):
+                reactants = batch.get("input_reactants", [""] * len(batch[next(iter(batch))]))
+                reagents = batch.get("input_reagents", [""] * len(batch[next(iter(batch))]))
+                inputs = []
+                for r, q in zip(reactants, reagents):
+                    r = r or ""
+                    q = q or ""
+                    if r and q:
+                        inp = f"{r}{sep}{q}"
+                    else:
+                        inp = r or q
+                    inputs.append(inp)
+
+                model_inputs = tokenizer(
+                    inputs,
+                    padding="max_length",
+                    truncation=True,
+                    max_length=350,
+                )
+                targets = batch.get(target_col, [""] * len(inputs))
+                with tokenizer.as_target_tokenizer():
+                    labels = tokenizer(
+                        targets,
+                        padding="max_length",
+                        truncation=True,
+                        max_length=350,
+                    )
+                model_inputs["labels"] = labels["input_ids"]
+                return model_inputs
+
+            return _pre
+
+        preprocess = chanlam_preprocess(tokenizer)
+
+        # map preprocess across splits
+        ds = {s: ds[s] for s in ds.keys()}
+        for s in ds:
+            ds[s] = ds[s].map(preprocess, batched=True)
+
+        ds_train = pick_split(ds, preferred="train")
+        ds_val = pick_split(ds, preferred="val")
 
     elif args.dataset_type.startswith("mit_"):
         parts = args.dataset_type.split("_")
@@ -124,8 +172,8 @@ if __name__ == "__main__":
 
         ds = load_custom_mit_dataset(type=ds_type, format=fmt)
         ds = ds.map(preprocess, batched=True, remove_columns=[input_col, target_col])
-        ds_train = ds["train"]
-        ds_val = ds["val"]
+        ds_train = pick_split(ds, preferred="train")
+        ds_val = pick_split(ds, preferred="val")
 
         try:
             val_n = max(1, len(ds_val) // 10)
