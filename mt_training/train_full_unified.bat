@@ -9,7 +9,7 @@ python train_full_unified.py ^
   --lr 7e-4 ^
   --use_early_stopping ^
   --early_stopping_patience 3 ^
-  --early_stopping_threshold 0.0 ^
+  --early_stopping_threshold 0.0
 
 python train_full_unified.py ^
   --base_model_name Thecoder3281f/ManganumT5v1_1-base-separated-standard ^
@@ -19,7 +19,7 @@ python train_full_unified.py ^
   --lr 7e-4 ^
   --use_early_stopping ^
   --early_stopping_patience 3 ^
-  --early_stopping_threshold 0.0 ^
+  --early_stopping_threshold 0.0
 
 python train_full_unified.py ^
   --base_model_name Thecoder3281f/ManganumT5v1_1-base-separated-augmented ^
@@ -29,4 +29,4 @@ python train_full_unified.py ^
   --lr 7e-4 ^
   --use_early_stopping ^
   --early_stopping_patience 3 ^
-  --early_stopping_threshold 0.0 ^
+  --early_stopping_threshold 0.0
