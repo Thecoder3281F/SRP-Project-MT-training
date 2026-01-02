@@ -14,7 +14,7 @@ logs/
 
 output.png
 
-model_predictions/
+model_predictions*/
 
 _*
 
@@ -25,3 +25,5 @@ preds/
 fingerprint*
 
 tokenizers/
+
+imgs/
