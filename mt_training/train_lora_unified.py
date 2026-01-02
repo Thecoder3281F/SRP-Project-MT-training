@@ -1,6 +1,7 @@
 import argparse
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, set_seed
 from dataset_helpers import load_custom_mit_dataset, load_chanlam_dataset
+from dataset_helpers import pick_split
 import torch
 from peft import LoraConfig, get_peft_model, TaskType
 
@@ -9,6 +10,7 @@ from transformers import (
     Seq2SeqTrainingArguments,
     EarlyStoppingCallback,
 )
+from datasets import load_dataset
 from training_utils import train_t5_model
 
 print("Imports complete")
@@ -100,6 +102,12 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed for reproducibility (default 42)")
 
+    parser.add_argument(
+        "--save_merged_model",
+        action="store_true",
+        help="Whether to save the merged model after training (default: False)",
+    )
+
     return parser.parse_args()
 
 
@@ -121,6 +129,7 @@ def train_lora_model(
     lora_alpha: int,
     lora_dropout: float,
     target_modules=None,
+    save_merged_model: bool = False,
     seed: int = 42,
 ):
     # instantiate base model/tokenizer
@@ -159,18 +168,19 @@ def train_lora_model(
         except Exception as e:
             print(f"Warning: saving adapter failed: {e}")
 
-        try:
-            if hasattr(trainer.model, "merge_and_unload"):
-                merged = trainer.model.merge_and_unload()
-                if merged is not None:
-                    trainer.model = merged
-        except Exception as e:
-            print(f"Warning: merge_and_unload failed: {e}")
+        if save_merged_model:
+            try:
+                if hasattr(trainer.model, "merge_and_unload"):
+                    merged = trainer.model.merge_and_unload()
+                    if merged is not None:
+                        trainer.model = merged
+            except Exception as e:
+                print(f"Warning: merge_and_unload failed: {e}")
 
-        try:
-            trainer.save_model(merged_dir)
-        except Exception as e:
-            print(f"Warning: saving merged model failed: {e}")
+            try:
+                trainer.save_model(merged_dir)
+            except Exception as e:
+                print(f"Warning: saving merged model failed: {e}")
 
     # Call shared training utility; pass post-train callback so adapter can be saved/merged
     train_t5_model(
@@ -231,15 +241,57 @@ if __name__ == "__main__":
     # - mit_<separated|mixed|combined>_<normal|augmented>
     if args.dataset_type.startswith("chanlam_"):
         _, fmt = args.dataset_type.split("_", 1)
-        input_col = "reactants"
-        target_col = "product1"
-        preprocess = build_preprocess(tokenizer, input_col, target_col)
+        sep = ">" if fmt == "separated" else "." if fmt == "mixed" else " "
 
-        ds = load_chanlam_dataset(ds_type="default", format=fmt)
-        # ds is a DatasetDict; map each split
-        ds = ds.map(preprocess, batched=True, remove_columns=[input_col, target_col])
-        ds_train = ds["train"]
-        ds_val = ds["val"]
+        ds = load_dataset("Thecoder3281f/chanlam-dataset")
+        if "validation" in ds and "val" not in ds:
+            ds["val"] = ds["validation"]
+
+        # use canonical product column
+        target_col = "product_1_canonical_smiles"
+
+        def chanlam_preprocess(tokenizer, max_len=350):
+            def _pre(batch):
+                reactants = batch.get("input_reactants", [""] * len(batch[next(iter(batch))]))
+                reagents = batch.get("input_reagents", [""] * len(batch[next(iter(batch))]))
+                inputs = []
+                for r, q in zip(reactants, reagents):
+                    r = r or ""
+                    q = q or ""
+                    if r and q:
+                        inp = f"{r}{sep}{q}"
+                    else:
+                        inp = r or q
+                    inputs.append(inp)
+
+                model_inputs = tokenizer(
+                    inputs,
+                    padding="max_length",
+                    truncation=True,
+                    max_length=350,
+                )
+                targets = batch.get(target_col, [""] * len(inputs))
+                with tokenizer.as_target_tokenizer():
+                    labels = tokenizer(
+                        targets,
+                        padding="max_length",
+                        truncation=True,
+                        max_length=350,
+                    )
+                model_inputs["labels"] = labels["input_ids"]
+                return model_inputs
+
+            return _pre
+
+        preprocess = chanlam_preprocess(tokenizer)
+
+        # map across splits
+        ds = {s: ds[s] for s in ds.keys()}
+        for s in ds:
+            ds[s] = ds[s].map(preprocess, batched=True)
+
+        ds_train = pick_split(ds, preferred="train")
+        ds_val = pick_split(ds, preferred="val")
 
     elif args.dataset_type.startswith("mit_"):
         parts = args.dataset_type.split("_")
@@ -252,8 +304,8 @@ if __name__ == "__main__":
 
         ds = load_custom_mit_dataset(type=ds_type, format=fmt)
         ds = ds.map(preprocess, batched=True, remove_columns=[input_col, target_col])
-        ds_train = ds["train"]
-        ds_val = ds["val"]
+        ds_train = pick_split(ds, preferred="train")
+        ds_val = pick_split(ds, preferred="val")
 
         # For MIT datasets, shrink validation for quicker runs
         try:
@@ -287,6 +339,7 @@ if __name__ == "__main__":
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
         target_modules=args.target_modules,
+        save_merged_model=args.save_merged_model,
         seed=args.seed,
     )
     torch.cuda.empty_cache()

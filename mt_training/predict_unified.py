@@ -4,6 +4,7 @@ import os
 from typing import Iterable, List, Tuple
 
 import pandas as pd
+from datasets import load_dataset
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
@@ -12,7 +13,7 @@ from transformers import (
     set_seed,
 )
 
-from dataset_helpers import load_chanlam_dataset, load_custom_mit_dataset
+from dataset_helpers import load_chanlam_dataset, load_custom_mit_dataset, pick_split
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -215,8 +216,36 @@ def main():
     # Determine dataset and preprocessing
     if args.dataset_type.startswith("chanlam_"):
         _, fmt = args.dataset_type.split("_", 1)
-        input_col = "reactants"
-        target_col = "product1"
+        sep = ">" if fmt == "separated" else "." if fmt == "mixed" else " "
+
+        ds = load_dataset("Thecoder3281f/chanlam-dataset")
+        if "validation" in ds and "val" not in ds:
+            ds["val"] = ds["validation"]
+
+        # use canonical product column
+        target_col = "product_1_canonical_smiles"
+
+        # create a small wrapper preprocess that first combines reactants/reagents
+        def preprocess_combiner(batch):
+            reactants = batch.get("input_reactants", [""] * len(batch[next(iter(batch))]))
+            reagents = batch.get("input_reagents", [""] * len(batch[next(iter(batch))]))
+            combined = []
+            for r, q in zip(reactants, reagents):
+                r = r or ""
+                q = q or ""
+                if r and q:
+                    combined.append(f"{r}{sep}{q}")
+                else:
+                    combined.append(r or q)
+            batch["_combined_input"] = combined
+            batch["_target_col"] = batch.get(target_col, [""] * len(combined))
+            return batch
+
+        ds_test = pick_split(ds, preferred="test")
+        ds_test = ds_test.map(preprocess_combiner, batched=True)
+
+        input_col = "_combined_input"
+        target_col = "_target_col"
         preprocess = build_preprocess(
             tokenizer,
             args.max_length,
@@ -225,7 +254,7 @@ def main():
             prompt_mode=args.prompt_mode,
             prompt_template=args.prompt_template,
         )
-        eval_dataset = load_chanlam_dataset(ds_type="default", format=fmt, split="test")
+        eval_dataset = ds_test
     elif args.dataset_type.startswith("mit_"):
         parts = args.dataset_type.split("_")
         if len(parts) != 3:
@@ -241,7 +270,8 @@ def main():
             prompt_mode=args.prompt_mode,
             prompt_template=args.prompt_template,
         )
-        eval_dataset = load_custom_mit_dataset(type=ds_type, format=fmt, split="test")
+        ds_mit = load_custom_mit_dataset(type=ds_type, format=fmt)
+        eval_dataset = pick_split(ds_mit, preferred="test")
     else:
         raise ValueError("Unsupported dataset_type; see --help for allowed identifiers")
 

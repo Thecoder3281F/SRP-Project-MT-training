@@ -82,3 +82,65 @@ def load_chanlam_dataset(ds_type: str = "default", format: str = "separated", sp
         combined[split_name] = concatenate_datasets([ds_sep[split_name], ds_mix[split_name]])
 
     return combined
+
+
+def load_chanlam_hf(format: str = "separated", split: str | None = None, dataset_name: str = "Thecoder3281f/chanlam-dataset"):
+    """Load the new unified Chanlam HF dataset (Thecoder3281f/chanlam-dataset).
+
+    Returns the requested split (if `split` provided) or the full DatasetDict.
+    The dataset contains `input_reactants`, `input_reagents`, and product columns
+    (the canonical product column is `product_1_canonical_smiles`).
+    """
+    ds = load_dataset(dataset_name)
+    # standardize split naming
+    if "validation" in ds and "val" not in ds:
+        ds["val"] = ds["validation"]
+
+    if split is not None:
+        return ds.get(split)
+    return ds
+
+
+def combine_reactants_reagents(ds_split, sep: str = ".", target_col: str = "product_1_canonical_smiles"):
+    """Return a mapped dataset split that contains `_combined_input` and `_target_col`.
+
+    `_combined_input` is `input_reactants` + `sep` + `input_reagents` (or the non-empty one).
+    """
+    def _comb(batch):
+        reactants = batch.get("input_reactants", [""] * len(batch[next(iter(batch))]))
+        reagents = batch.get("input_reagents", [""] * len(batch[next(iter(batch))]))
+        combined = []
+        for r, q in zip(reactants, reagents):
+            r = r or ""
+            q = q or ""
+            if r and q:
+                combined.append(f"{r}{sep}{q}")
+            else:
+                combined.append(r or q)
+        batch["_combined_input"] = combined
+        batch["_target_col"] = batch.get(target_col, [""] * len(combined))
+        return batch
+
+    return ds_split.map(_comb, batched=True)
+
+
+def pick_split(ds_dict_or_dataset, preferred: str = "test"):
+    """Return a Dataset for the requested split name, tolerant of common split keys.
+
+    If `ds_dict_or_dataset` is a Dataset (not a dict), it is returned directly.
+    If it's a DatasetDict, the function will try the following keys in order:
+    [preferred, 'test', 'val', 'validation', 'train'] and return the first found split.
+    Raises KeyError if no matching split is present.
+    """
+    # if already a Dataset (not a dict-like), return as-is
+    try:
+        keys = list(ds_dict_or_dataset.keys())
+    except Exception:
+        return ds_dict_or_dataset
+
+    candidates = [preferred, "test", "val", "validation", "train"]
+    for c in candidates:
+        if c in ds_dict_or_dataset:
+            return ds_dict_or_dataset[c]
+
+    raise KeyError(f"None of the expected split names found in dataset. Tried: {candidates}")
