@@ -29,7 +29,6 @@ import pandas as pd
 COLUMNS = [
     "Family",
     "Size",
-    "Augmented?",
     "Full Model Name",
     "# Samples",
     "Rows with any invalid",
@@ -40,22 +39,21 @@ COLUMNS = [
     "Top-3 Accuracy",
     "Top-5 Accuracy",
     "Mean Tanimoto (valid)",
-    "Mean Tanimoto (incl. invalid)",
     "Prediction 1 Invalid",
     "Prediction 1 Tanimoto (valid)",
-    "Prediction 1 Tanimoto (incl invalid)",
+    
     "Prediction 2 Invalid",
     "Prediction 2 Tanimoto (valid)",
-    "Prediction 2 Tanimoto (incl invalid)",
+    
     "Prediction 3 Invalid",
     "Prediction 3 Tanimoto (valid)",
-    "Prediction 3 Tanimoto (incl invalid)",
+    
     "Prediction 4 Invalid",
     "Prediction 4 Tanimoto (valid)",
-    "Prediction 4 Tanimoto (incl invalid)",
+    
     "Prediction 5 Invalid",
     "Prediction 5 Tanimoto (valid)",
-    "Prediction 5 Tanimoto (incl invalid)",
+    
 ]
 
 
@@ -98,8 +96,6 @@ def infer_metadata(eval_json_path: Path) -> Dict[str, str]:
     else:
         size = ""  # unknown
 
-    # Augmented?
-    augmented = "Yes" if "aug" in model_lc or "augmented" in model_lc else "No"
 
     # Family (heuristics)
     if "multitasktextandchemistry" in model_lc or "mtc" in model_lc:
@@ -121,7 +117,6 @@ def infer_metadata(eval_json_path: Path) -> Dict[str, str]:
     return {
         "Family": family,
         "Size": size,
-        "Augmented?": augmented,
         "Full Model Name": full_name,
     }
 
@@ -161,7 +156,6 @@ def build_row(eval_path: Path, data: Dict[str, Any], sigfig: Optional[int]) -> D
 
     # Mean tanimoto
     mean_valid = get_nested(data, "tanimoto", "overall", "mean_valid_only", default=None)
-    mean_incl = get_nested(data, "tanimoto", "overall", "mean_including_invalid", default=None)
 
     row: Dict[str, Any] = {
         **meta,
@@ -174,21 +168,17 @@ def build_row(eval_path: Path, data: Dict[str, Any], sigfig: Optional[int]) -> D
         "Top-3 Accuracy": maybe_round(pct(top3), sigfig),
         "Top-5 Accuracy": maybe_round(pct(top5), sigfig),
         "Mean Tanimoto (valid)": maybe_round(float(mean_valid) if mean_valid is not None else None, sigfig),
-        "Mean Tanimoto (incl. invalid)": maybe_round(float(mean_incl) if mean_incl is not None else None, sigfig),
     }
 
     per_valid = get_nested(data, "tanimoto", "per_column", "valid_only", default={}) or {}
-    per_incl = get_nested(data, "tanimoto", "per_column", "including_invalid", default={}) or {}
 
     for i in range(1, 6):
         pred_col = f"prediction_{i}"
         invalid_count = int(get_nested(per_col, pred_col, "invalid", default=0) or 0)
         tani_valid = per_valid.get(pred_col, None)
-        tani_incl = per_incl.get(pred_col, None)
 
         row[f"Prediction {i} Invalid"] = invalid_count
         row[f"Prediction {i} Tanimoto (valid)"] = maybe_round(float(tani_valid) if tani_valid is not None else None, sigfig)
-        row[f"Prediction {i} Tanimoto (incl invalid)"] = maybe_round(float(tani_incl) if tani_incl is not None else None, sigfig)
 
     # Ensure all columns exist
     for c in COLUMNS:

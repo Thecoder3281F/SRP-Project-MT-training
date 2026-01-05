@@ -212,25 +212,13 @@ REM Removed sagawa evaluation entries; using pred_chunks_Thecoder3281F subfolder
 @REM     --output_file "model_predictions\lorachanlam\pred_chunks_lora_chanlam\Thecoder3281f\ManganumT5v1_1-small-separated-standard-chanlam-adapter-10000\evaluation_results.json"
 
 python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-base-separated-augmented_separated_beam10_r5\finalpreds.csv" ^
+    --csv_path "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-base-separated-augmented-chanlam-fullft-10000\finalpreds.csv" ^
     --gt_column "label" ^
     --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-base-separated-augmented_separated_beam10_r5\evaluation_results.json"
+    --output_file "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-base-separated-augmented-chanlam-fullft-10000\evaluation_results.json"
 
 python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-base-separated-standard_separated_beam10_r5\finalpreds.csv" ^
+    --csv_path "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-small-separated-augmented-chanlam-fullft-10000\finalpreds.csv" ^
     --gt_column "label" ^
     --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-base-separated-standard_separated_beam10_r5\evaluation_results.json"
-
-python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-small-separated-augmented_separated_beam10_r5\finalpreds.csv" ^
-    --gt_column "label" ^
-    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-small-separated-augmented_separated_beam10_r5\evaluation_results.json"
-
-python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-small-separated-standard_separated_beam10_r5\finalpreds.csv" ^
-    --gt_column "label" ^
-    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions\my_models\beforeft\mit\pred_chunks_Thecoder3281F\ManganumT5v1_1-small-separated-standard_separated_beam10_r5\evaluation_results.json"
+    --output_file "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-small-separated-augmented-chanlam-fullft-10000\evaluation_results.json"
