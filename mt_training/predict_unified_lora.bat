@@ -18,3 +18,5 @@ python predict_unified_lora.py ^
   --dataset_type mit_separated_normal ^
   --chunks all ^
   --output_dir preds/Thecoder3281f/ManganumT5v1_1-base-separated-augmented-chanlam-adapter-10000
+
+pause
