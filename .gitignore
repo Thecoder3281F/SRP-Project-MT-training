@@ -1,29 +1,33 @@
-# Generic
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+ENV/
+
+# Editors and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.apikey
+*.key
+*.env
+
+# Archive folder (generated/temp files)
+_archive/
+
+# Logs and caches
 *.log
 .conda/
-.vscode/
-__pycache__/
 
-# Specific
+# Large generated artifacts
 models/
-datasets_final/
-_*/
 logs/
-
-.apikey
-
-output.png
-
-model_predictions*/
-
-_*
-
-preds/
-
-*seeds*
-
-fingerprint*
-
 tokenizers/
-
-imgs/
+*.7z
