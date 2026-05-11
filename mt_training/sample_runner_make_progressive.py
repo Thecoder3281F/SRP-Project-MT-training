@@ -1,3 +1,5 @@
+"""TODO: Add module docstring describing this helper script."""
+
 import os
 import subprocess
 import sys

@@ -163,6 +163,10 @@ def choose_diverse_indices(
 
     for key in ordered_keys:
         candidates = list(groups[key])
+    pbar_diverse = tqdm(total=len(ordered_keys), desc="  Selecting diverse rows per group", leave=False)
+    for key in ordered_keys:
+        candidates = list(groups[key])
+        pbar_diverse.update(1)
         for _ in range(min(per_group, len(candidates))):
             # evaluate each remaining candidate
             best_idx = None
@@ -276,6 +280,7 @@ def choose_spread_indices(groups, ordered_keys, df, diversity_col, per_group, ta
 
     # round-robin until target reached or no candidates remain
     exhausted = False
+    pbar = tqdm(total=target_rows, desc="  Spread selection progress", leave=False)
     while len(selected) < target_rows and not exhausted:
         exhausted = True
         for k in ordered_keys:
@@ -289,6 +294,7 @@ def choose_spread_indices(groups, ordered_keys, df, diversity_col, per_group, ta
             exhausted = False
             selected.append(cand)
             picked_per_group[k] = picked_per_group.get(k, 0) + 1
+            pbar.update(1)
 
     # if still short, fill with any remaining rows (random)
     if len(selected) < target_rows:
@@ -296,6 +302,7 @@ def choose_spread_indices(groups, ordered_keys, df, diversity_col, per_group, ta
         rng.shuffle(all_remaining)
         needed = target_rows - len(selected)
         selected.extend(all_remaining[:needed])
+    pbar.close()
 
     return selected
 

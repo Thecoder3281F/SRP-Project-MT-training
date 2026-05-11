@@ -1,3 +1,5 @@
+"""TODO: Add module docstring describing this training script."""
+
 import argparse
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, set_seed
 from dataset_helpers import load_custom_mit_dataset, load_chanlam_dataset

@@ -1,3 +1,5 @@
+"""TODO: Add module docstring describing CSV joining utilities."""
+
 import pandas as pd
 import argparse
 from pathlib import Path

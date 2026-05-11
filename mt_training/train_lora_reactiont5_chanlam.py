@@ -1,3 +1,5 @@
+"""TODO: Add module docstring describing this training script."""
+
 import argparse
 
 import torch
