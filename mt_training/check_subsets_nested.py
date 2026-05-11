@@ -1,9 +1,11 @@
+"""TODO: Add module docstring describing this check script."""
+
 import os
 import pandas as pd
 import glob
 
-dirpath = os.path.join('datasets_final','chanlam_final','progressive_spread_rows')
-files = sorted(glob.glob(os.path.join(dirpath,'train_groups_*.csv')),
+dirpath = os.path.join('datasets_final','chanlam_final','progressive_by_reactants')
+files = sorted(glob.glob(os.path.join(dirpath,'train_rows_*.csv')),
                key=lambda p: int(os.path.splitext(os.path.basename(p))[0].split('_')[-1]))
 
 if not files:

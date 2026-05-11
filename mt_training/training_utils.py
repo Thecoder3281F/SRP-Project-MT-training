@@ -1,3 +1,5 @@
+"""TODO: Add module docstring describing training utilities."""
+
 from transformers import (
     AutoModelForSeq2SeqLM,
     Seq2SeqTrainer,
