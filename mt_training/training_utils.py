@@ -61,7 +61,8 @@ def train_t5_model(
     model,
     tokenizer,
     output_model: str,
-    max_steps: int,
+    max_steps: int | None,
+    num_train_epochs: float | None,
     train_ds,
     val_ds,
     lr: float,
@@ -94,6 +95,17 @@ def train_t5_model(
     """
     set_seed(seed)
 
+    if max_steps is not None and num_train_epochs is not None:
+        raise ValueError("Provide only one of `max_steps` or `num_train_epochs`.")
+    if max_steps is None and num_train_epochs is None:
+        raise ValueError("One of `max_steps` or `num_train_epochs` must be provided.")
+    if max_steps is not None and max_steps <= 0:
+        raise ValueError("`max_steps` must be > 0.")
+    if num_train_epochs is not None and num_train_epochs <= 0:
+        raise ValueError("`num_train_epochs` must be > 0.")
+
+    use_steps_schedule = max_steps is not None
+
     # ---- 1. Create callbacks list ----
     callbacks = []
     if use_early_stopping:
@@ -106,20 +118,15 @@ def train_t5_model(
 
     # compute sensible default logging_steps if not provided
     if logging_steps is None:
-        logging_steps = max(1, max_steps // 40) if max_steps and max_steps > 0 else 50
+        logging_steps = max(1, max_steps // 40) if use_steps_schedule else 50
 
     # ---- 2. TrainingArguments ----
-    args = Seq2SeqTrainingArguments(
+    train_args_kwargs = dict(
         output_dir=f"./models/{output_model}",
-        eval_strategy="steps",
-        save_strategy="steps",
         learning_rate=lr,
         auto_find_batch_size=auto_find_batch_size,
         per_device_eval_batch_size=per_device_eval_batch_size,
         warmup_ratio=warmup_ratio,
-        max_steps=max_steps,
-        save_steps=max(1, max_steps // 20) if max_steps and max_steps > 0 else 500,
-        eval_steps=max(1, max_steps // 20) if max_steps and max_steps > 0 else 500,
         logging_strategy="steps",
         logging_steps=logging_steps,
         report_to="tensorboard",
@@ -142,6 +149,25 @@ def train_t5_model(
         dataloader_pin_memory=dataloader_pin_memory,
         dataloader_num_workers=dataloader_num_workers,
     )
+
+    if use_steps_schedule:
+        train_args_kwargs.update(
+            eval_strategy="steps",
+            save_strategy="steps",
+            max_steps=max_steps,
+            save_steps=max(1, max_steps // 20),
+            eval_steps=max(1, max_steps // 20),
+        )
+        run_suffix = f"{max_steps}steps"
+    else:
+        train_args_kwargs.update(
+            eval_strategy="epoch",
+            save_strategy="epoch",
+            num_train_epochs=num_train_epochs,
+        )
+        run_suffix = f"{num_train_epochs:g}epochs"
+
+    args = Seq2SeqTrainingArguments(**train_args_kwargs)
 
     print(f"Per-device train batch (auto): {args.per_device_train_batch_size}")
 
@@ -167,6 +193,6 @@ def train_t5_model(
             print(f"Warning: post_train_callback raised: {e}")
 
     # ---- 5. Save final model ----
-    trainer.save_model(f"./models/{output_model}_final_{max_steps}")
+    trainer.save_model(f"./models/{output_model}_final_{run_suffix}")
 
     del trainer

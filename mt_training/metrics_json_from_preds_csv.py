@@ -42,7 +42,7 @@ def tanimoto(a, b):
         return 0
 
 
-def compute_metrics_from_csv(csv_path, gt_column="label", pred_columns=None):
+def compute_metrics_from_csv(csv_path, gt_column="label", pred_columns=None, skip_tanimoto: bool = False):
     """
     Compute metrics from a CSV file with ground truth and predictions.
 
@@ -122,15 +122,18 @@ def compute_metrics_from_csv(csv_path, gt_column="label", pred_columns=None):
             is_valid = int(Chem.MolFromSmiles(pred_c) is not None) if pred_c else 0
             valid_smiles_list.append(is_valid)
 
-            # Compute tanimoto for this prediction vs ground truth (existing behavior returns 0 on invalids)
-            tani = tanimoto(pred_c, label_c)
-            tanimoto_by_pred[pred_col].append(tani)
+            # Compute tanimoto for this prediction vs ground truth (skip if requested)
+            if not skip_tanimoto:
+                tani = tanimoto(pred_c, label_c)
+                tanimoto_by_pred[pred_col].append(tani)
 
-            # Track tanimotos for valid-only (both label and pred must be valid)
-            if label_valid and pred_valid:
-                tanimoto_by_pred_validonly[pred_col].append(tani)
-                if max_tani_valid is None or tani > max_tani_valid:
-                    max_tani_valid = tani
+                # Track tanimotos for valid-only (both label and pred must be valid)
+                if label_valid and pred_valid:
+                    tanimoto_by_pred_validonly[pred_col].append(tani)
+                    if max_tani_valid is None or tani > max_tani_valid:
+                        max_tani_valid = tani
+            else:
+                tani = 0
 
             # Top-k correctness (existing behaviour requires both canonical strings present and equal)
             if label_c and pred_c and pred_c == label_c:
@@ -181,8 +184,12 @@ def compute_metrics_from_csv(csv_path, gt_column="label", pred_columns=None):
     }
 
     # Overall means
-    mean_tanimoto_all = float(np.mean(tanimotos)) if len(tanimotos) > 0 else 0.0
-    mean_tanimoto_valid_only = float(np.mean(tanimotos_validonly)) if len(tanimotos_validonly) > 0 else None
+    if not skip_tanimoto:
+        mean_tanimoto_all = float(np.mean(tanimotos)) if len(tanimotos) > 0 else 0.0
+        mean_tanimoto_valid_only = float(np.mean(tanimotos_validonly)) if len(tanimotos_validonly) > 0 else None
+    else:
+        mean_tanimoto_all = None
+        mean_tanimoto_valid_only = None
 
     # Top-k: report both over all samples and valid-only (label valid only)
     canonical_top1_all = top1_correct / num_samples if num_samples > 0 else 0.0
@@ -225,16 +232,19 @@ def compute_metrics_from_csv(csv_path, gt_column="label", pred_columns=None):
         "per_prediction_column": per_column_counts,
     }
 
-    tanimoto_section = {
-        "overall": {
-            "mean_including_invalid": mean_tanimoto_all,
-            "mean_valid_only": mean_tanimoto_valid_only,
-        },
-        "per_column": {
-            "including_invalid": per_column_means_including_invalid,
-            "valid_only": per_column_means_valid_only,
-        },
-    }
+    if not skip_tanimoto:
+        tanimoto_section = {
+            "overall": {
+                "mean_including_invalid": mean_tanimoto_all,
+                "mean_valid_only": mean_tanimoto_valid_only,
+            },
+            "per_column": {
+                "including_invalid": per_column_means_including_invalid,
+                "valid_only": per_column_means_valid_only,
+            },
+        }
+    else:
+        tanimoto_section = {}
 
     topk_section = {
         "all": {
@@ -271,6 +281,8 @@ def parse_args():
                         help="Comma-separated list of prediction columns (default: prediction_1,prediction_2,prediction_3,prediction_4,prediction_5)")
     parser.add_argument("--output_file", type=str, default=None,
                         help="Optional output JSON file for results")
+    parser.add_argument("--skip-tanimoto", action="store_true",
+                        help="Skip Tanimoto similarity calculations (faster, omits tanimoto section)")
     
     return parser.parse_args()
 
@@ -283,7 +295,7 @@ def main():
     
     # Compute metrics
     logger.info("Computing metrics...")
-    results = compute_metrics_from_csv(args.csv_path, args.gt_column, pred_columns)
+    results = compute_metrics_from_csv(args.csv_path, args.gt_column, pred_columns, skip_tanimoto=args.skip_tanimoto)
     
     # Print results as pretty JSON (handles nested structures safely)
     print("\n" + "="*60)

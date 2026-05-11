@@ -39,8 +39,19 @@ def parse_args():
         ],
     )
 
-    parser.add_argument("--max_steps", type=int, default=20000,
-                        help="Max training steps (default 20000)")
+    train_length_group = parser.add_mutually_exclusive_group()
+    train_length_group.add_argument(
+        "--max_steps",
+        type=int,
+        default=None,
+        help="Max training steps. Mutually exclusive with --num_train_epochs (default mode: steps=20000)",
+    )
+    train_length_group.add_argument(
+        "--num_train_epochs",
+        type=float,
+        default=None,
+        help="Number of training epochs. Mutually exclusive with --max_steps",
+    )
 
     parser.add_argument("--lr", type=float, default=7e-4,
                         help="Learning rate")
@@ -95,6 +106,15 @@ def build_preprocess(tokenizer, input_col: str, target_col: str):
 
 if __name__ == "__main__":
     args = parse_args()
+
+    if args.max_steps is None and args.num_train_epochs is None:
+        args.max_steps = 20000
+
+    if args.max_steps is not None and args.max_steps <= 0:
+        raise ValueError("--max_steps must be > 0")
+    if args.num_train_epochs is not None and args.num_train_epochs <= 0:
+        raise ValueError("--num_train_epochs must be > 0")
+
     print("Launching full finetune training with:")
     print(args)
 
@@ -197,6 +217,7 @@ if __name__ == "__main__":
         tokenizer=tokenizer,
         output_model=args.output_model_dir,
         max_steps=args.max_steps,
+        num_train_epochs=args.num_train_epochs,
         lr=args.lr,
         train_ds=ds_train,
         val_ds=ds_val,

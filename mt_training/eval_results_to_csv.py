@@ -193,6 +193,7 @@ def main():
     parser.add_argument("--out", type=str, default="mt_training/results_summary.csv", help="Output CSV path")
     parser.add_argument("--sigfig", type=int, default=3, help="Round floats to N significant figures (default: 3). Use 0 to disable.")
     parser.add_argument("--pattern", type=str, default="evaluation_results.json", help="Filename to match (default: evaluation_results.json)")
+    parser.add_argument("--skip-tanimoto", action="store_true", help="Do not read/emit Tanimoto metrics from evaluation JSONs")
     args = parser.parse_args()
 
     sigfig: Optional[int] = None if args.sigfig == 0 else int(args.sigfig)
@@ -212,6 +213,8 @@ def main():
         except Exception as e:
             print(f"Skipping {p}: failed to read JSON: {e}")
             continue
+        if args.skip_tanimoto:
+            data.pop("tanimoto", None)
         try:
             rows.append(build_row(p, data, sigfig))
         except Exception as e:

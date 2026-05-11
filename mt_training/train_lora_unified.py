@@ -59,8 +59,19 @@ def parse_args():
         ],
     )
 
-    parser.add_argument("--max_steps", type=int, default=10000,
-                        help="Max training steps (default 10000)")
+    train_length_group = parser.add_mutually_exclusive_group()
+    train_length_group.add_argument(
+        "--max_steps",
+        type=int,
+        default=None,
+        help="Max training steps. Mutually exclusive with --num_train_epochs (default mode: steps=10000)",
+    )
+    train_length_group.add_argument(
+        "--num_train_epochs",
+        type=float,
+        default=None,
+        help="Number of training epochs. Mutually exclusive with --max_steps",
+    )
 
     parser.add_argument("--lr", type=float, default=1e-4,
                         help="Learning rate (default 1e-4 for LoRA)")
@@ -114,7 +125,8 @@ def parse_args():
 def train_lora_model(
     base_model: str,
     output_model: str,
-    max_steps: int,
+    max_steps: int | None,
+    num_train_epochs: float | None,
     train_ds,
     val_ds,
     lr: float,
@@ -156,8 +168,9 @@ def train_lora_model(
 
     # define post-train callback to save adapter and merged model while trainer is available
     def _post_train(trainer):
-        adapter_dir = f"./models/{output_model}_adapter_{max_steps}"
-        merged_dir = f"./models/{output_model}_merged_{max_steps}"
+        run_suffix = f"{max_steps}steps" if max_steps is not None else f"{num_train_epochs:g}epochs"
+        adapter_dir = f"./models/{output_model}_adapter_{run_suffix}"
+        merged_dir = f"./models/{output_model}_merged_{run_suffix}"
 
         try:
             if hasattr(trainer.model, "save_pretrained"):
@@ -188,6 +201,7 @@ def train_lora_model(
         tokenizer=tokenizer,
         output_model=output_model,
         max_steps=max_steps,
+        num_train_epochs=num_train_epochs,
         train_ds=train_ds,
         val_ds=val_ds,
         lr=lr,
@@ -205,6 +219,15 @@ def train_lora_model(
 
 if __name__ == "__main__":
     args = parse_args()
+
+    if args.max_steps is None and args.num_train_epochs is None:
+        args.max_steps = 10000
+
+    if args.max_steps is not None and args.max_steps <= 0:
+        raise ValueError("--max_steps must be > 0")
+    if args.num_train_epochs is not None and args.num_train_epochs <= 0:
+        raise ValueError("--num_train_epochs must be > 0")
+
     print("Launching LoRA training with:")
     print(args)
     # Set global seed
@@ -325,6 +348,7 @@ if __name__ == "__main__":
         base_model=args.base_model_name,
         output_model=args.output_model_dir,
         max_steps=args.max_steps,
+        num_train_epochs=args.num_train_epochs,
         lr=args.lr,
         train_ds=ds_train,
         val_ds=ds_val,
