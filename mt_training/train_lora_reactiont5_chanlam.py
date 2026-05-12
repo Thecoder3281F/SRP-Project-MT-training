@@ -213,7 +213,7 @@ if __name__ == "__main__":
     set_seed(args.seed)
     tokenizer = AutoTokenizer.from_pretrained(args.base_model_name)
 
-    ds = load_dataset("parquet", data_files="hf://datasets/Thecoder3281f/chanlam-dataset-splits/data/train_rows_50-00000-of-00001.parquet")
+    ds = load_dataset("parquet", data_files="hf://datasets/Thecoder3281f/chanlam-dataset-splits/data/train_rows_100-00000-of-00001.parquet")
     if "validation" in ds and "val" not in ds:
         ds["val"] = ds["validation"]
 
