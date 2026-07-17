@@ -212,13 +212,37 @@ REM Removed sagawa evaluation entries; using pred_chunks_Thecoder3281F subfolder
 @REM     --output_file "model_predictions\lorachanlam\pred_chunks_lora_chanlam\Thecoder3281f\ManganumT5v1_1-small-separated-standard-chanlam-adapter-10000\evaluation_results.json"
 
 python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-base-separated-standard-chanlam-fullft-10000\finalpreds.csv" ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-10rows-30epochs\chunk_0.csv" ^
     --gt_column "label" ^
     --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-base-separated-standard-chanlam-fullft-10000\evaluation_results.json"
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-10rows-30epochs\evaluation_results.json"
 
 python metrics_json_from_preds_csv.py ^
-    --csv_path "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-small-separated-standard-chanlam-fullft-10000\finalpreds.csv" ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-50rows-30epochs\chunk_0.csv" ^
     --gt_column "label" ^
     --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
-    --output_file "model_predictions_42\my_models\afterft\full\mit\Thecoder3281f\ManganumT5v1_1-small-separated-standard-chanlam-fullft-10000\evaluation_results.json"
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-50rows-30epochs\evaluation_results.json"
+
+python metrics_json_from_preds_csv.py ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-100rows-30epochs\chunk_0.csv" ^
+    --gt_column "label" ^
+    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-100rows-30epochs\evaluation_results.json"
+
+python metrics_json_from_preds_csv.py ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-500rows-30epochs\chunk_0.csv" ^
+    --gt_column "label" ^
+    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-500rows-30epochs\evaluation_results.json"
+
+python metrics_json_from_preds_csv.py ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-1000rows-30epochs\chunk_0.csv" ^
+    --gt_column "label" ^
+    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-1000rows-30epochs\evaluation_results.json"
+
+python metrics_json_from_preds_csv.py ^
+    --csv_path "preds\Thecoder3281f\ReactionT5-lora-10rows-50epochs\chunk_0.csv" ^
+    --gt_column "label" ^
+    --pred_columns "prediction_1,prediction_2,prediction_3,prediction_4,prediction_5" ^
+    --output_file "preds\Thecoder3281f\ReactionT5-lora-10rows-50epochs\evaluation_results.json"

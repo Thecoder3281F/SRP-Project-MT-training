@@ -31,3 +31,5 @@ models/
 logs/
 tokenizers/
 *.7z
+*.csv
+*.json

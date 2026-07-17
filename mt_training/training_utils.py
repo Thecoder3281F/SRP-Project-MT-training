@@ -136,7 +136,7 @@ def train_t5_model(
         logging_dir=f"./logs/{output_model}",
         run_name=output_model,
         greater_is_better=False,
-        metric_for_best_model="loss",
+        metric_for_best_model="eval_loss",
         load_best_model_at_end=True,
         gradient_checkpointing=False,
         eval_accumulation_steps=128,
