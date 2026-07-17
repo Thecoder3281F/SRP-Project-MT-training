@@ -33,3 +33,4 @@ tokenizers/
 *.7z
 *.csv
 *.json
+_*/

@@ -11,7 +11,11 @@ This repository contains the code, preprocessing utilities, training scripts, an
 
 ## Recommended repository layout
 
-- [mt_training/](mt_training/) – training, evaluation, sampling, and utility scripts
+- [utils/](utils/) – shared helpers, evaluation utilities, and support scripts
+- [visualisation_scripts/](visualisation_scripts/) – UMAP and Streamlit visualisation tools
+- [train_lora_reactiont5_chanlam.py](train_lora_reactiont5_chanlam.py) – LoRA training entry point
+- [predict_unified.py](predict_unified.py) – standard inference entry point
+- [predict_unified_lora.py](predict_unified_lora.py) – LoRA inference entry point
 - [datasets_final/](datasets_final/) – final split CSVs and small reproducible dataset artifacts
 - [_datasets_unprocessed/](_datasets_unprocessed/) – local/raw preprocessing inputs, kept out of version control
 - [data_visualisation/](data_visualisation/) – notebooks and final figures

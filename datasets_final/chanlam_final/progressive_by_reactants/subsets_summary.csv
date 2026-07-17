@@ -1,3 +1,0 @@
-requested_rows,requested_groups,actual_groups,rows,sample_mode,file
-2000,26,26,2000,spread,train_rows_2000.csv
-4000,26,26,4000,spread,train_rows_4000.csv
