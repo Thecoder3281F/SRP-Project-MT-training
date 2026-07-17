@@ -4,19 +4,55 @@ REM Activate virtualenv and run unified LoRA prediction script
 
 
 python predict_unified_lora.py ^
-  --tokenizer_name Thecoder3281f/ManganumT5v1_1-small-separated-augmented ^
-  --base_model_name Thecoder3281f/ManganumT5v1_1-small-separated-augmented ^
-  --lora_adapter_path Thecoder3281f/ManganumT5v1_1-small-separated-augmented-chanlam-adapter-10000 ^
-  --dataset_type mit_separated_normal ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-10rows-30epochs ^
+  --dataset_type chanlam_separated ^
   --chunks all ^
-  --output_dir preds/Thecoder3281f/ManganumT5v1_1-small-separated-augmented-chanlam-adapter-10000
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-10rows-30epochs ^
+  --prompt_mode "reactiont5"
 
 python predict_unified_lora.py ^
-  --tokenizer_name Thecoder3281f/ManganumT5v1_1-base-separated-augmented ^
-  --base_model_name Thecoder3281f/ManganumT5v1_1-base-separated-augmented ^
-  --lora_adapter_path Thecoder3281f/ManganumT5v1_1-base-separated-augmented-chanlam-adapter-10000 ^
-  --dataset_type mit_separated_normal ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-50rows-30epochs ^
+  --dataset_type chanlam_separated ^
   --chunks all ^
-  --output_dir preds/Thecoder3281f/ManganumT5v1_1-base-separated-augmented-chanlam-adapter-10000
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-50rows-30epochs ^
+  --prompt_mode "reactiont5"
 
-pause
+python predict_unified_lora.py ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-100rows-30epochs ^
+  --dataset_type chanlam_separated ^
+  --chunks all ^
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-100rows-30epochs ^
+  --prompt_mode "reactiont5"
+
+python predict_unified_lora.py ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-500rows-30epochs ^
+  --dataset_type chanlam_separated ^
+  --chunks all ^
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-500rows-30epochs ^
+  --prompt_mode "reactiont5"
+
+python predict_unified_lora.py ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-1000rows-30epochs ^
+  --dataset_type chanlam_separated ^
+  --chunks all ^
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-1000rows-30epochs ^
+  --prompt_mode "reactiont5"
+
+python predict_unified_lora.py ^
+  --tokenizer_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --base_model_name sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --lora_adapter_path Thecoder3281f/ReactionT5-lora-10rows-50epochs ^
+  --dataset_type chanlam_separated ^
+  --chunks all ^
+  --output_dir preds/Thecoder3281f/ReactionT5-lora-10rows-50epochs ^
+  --prompt_mode "reactiont5"
