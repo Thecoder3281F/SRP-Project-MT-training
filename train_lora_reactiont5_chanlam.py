@@ -24,9 +24,14 @@ def parse_args():
     parser.add_argument(
         "--train_rows",
         type=int,
-        default=0,
+        default=None,
         choices=[10, 50, 100, 500, 1000, 2000, 4000],
-        help="Row-count subset to train on from the HF parquet files (e.g. 10 -> train_rows_10-00000-of-00001.parquet)",
+        help="Row-count subset to train on from the HF parquet files (e.g. 10 -> train_rows_10-00000-of-00001.parquet). Required unless --use_full_train_split is set.",
+    )
+    parser.add_argument(
+        "--use_full_train_split",
+        action="store_true",
+        help="Train on the full 'train' split from Thecoder3281f/chanlam-dataset instead of a train_rows subset parquet file",
     )
 
     train_length_group = parser.add_mutually_exclusive_group()
@@ -262,20 +267,24 @@ if __name__ == "__main__":
         raise ValueError("--max_steps must be > 0")
     if args.num_train_epochs is not None and args.num_train_epochs <= 0:
         raise ValueError("--num_train_epochs must be > 0")
-    if args.train_rows <= 0:
-        raise ValueError("--train_rows must be > 0")
+    if not args.use_full_train_split and (args.train_rows is None or args.train_rows <= 0):
+        raise ValueError("--train_rows must be provided and > 0 unless --use_full_train_split is set")
 
     print("Launching LoRA ReactionT5-style finetune training with:")
     print(args)
 
     set_seed(args.seed)
 
-    train_data_file = (
-        f"hf://datasets/Thecoder3281f/chanlam-dataset-splits/data/"
-        f"train_rows_{args.train_rows}-00000-of-00001.parquet"
-    )
-    print(f"Loading training subset file: {train_data_file}")
-    ds_train = cast(Dataset, load_dataset("parquet", data_files=train_data_file, split="train"))
+    if args.use_full_train_split:
+        print("Loading full training split from: Thecoder3281f/chanlam-dataset")
+        ds_train = cast(Dataset, load_dataset("Thecoder3281f/chanlam-dataset", split="train"))
+    else:
+        train_data_file = (
+            f"hf://datasets/Thecoder3281f/chanlam-dataset-splits/data/"
+            f"train_rows_{args.train_rows}-00000-of-00001.parquet"
+        )
+        print(f"Loading training subset file: {train_data_file}")
+        ds_train = cast(Dataset, load_dataset("parquet", data_files=train_data_file, split="train"))
     print("Loading validation split from: Thecoder3281f/chanlam-dataset")
     ds_val = cast(Dataset, load_dataset("Thecoder3281f/chanlam-dataset", split="validation"))
 
