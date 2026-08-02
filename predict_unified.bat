@@ -5,5 +5,5 @@ python predict_unified.py ^
   --model_path sagawa/ReactionT5v2-forward-USPTO_MIT ^
   --dataset_type chanlam_separated ^
   --chunks all ^
-  --output_dir preds/sagawa/ReactionT5v2-forward-USPTO_MIT ^
+  --output_dir preds/sagawa/ReactionT5v2-forward-USPTO_MIT_temp ^
   --prompt_mode "reactiont5" ^

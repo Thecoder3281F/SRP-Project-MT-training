@@ -3,10 +3,12 @@
 import argparse
 import logging
 import os
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple
 
 import pandas as pd
+import torch
 from datasets import load_dataset
+from tqdm.auto import tqdm
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
@@ -107,14 +109,33 @@ def predict_chunk(
 ):
     logger.info(f"Running prediction on chunk {chunk_id} ({len(subset)} rows)")
 
-    out = trainer.predict(subset)
-    preds = out.predictions
-    labels = out.label_ids
+    eval_dataloader = trainer.get_eval_dataloader(subset)
+    if trainer.model is None:
+        raise RuntimeError("Trainer model is not initialized")
+    model: Any = trainer.model
+    model.eval()
+
+    preds_batches = []
+    labels_batches = []
+
+    for batch in tqdm(eval_dataloader, desc=f"Chunk {chunk_id} batches", unit="batch", leave=False):
+        _, generated_tokens, labels = trainer.prediction_step(model, batch, prediction_loss_only=False, ignore_keys=None)
+
+        if generated_tokens is not None:
+            preds_batches.append(generated_tokens.detach().cpu())
+        if labels is not None:
+            labels_batches.append(labels.detach().cpu())
+
+    preds = torch.cat(preds_batches, dim=0) if preds_batches else torch.empty((0, 0), dtype=torch.long)
+    labels = torch.cat(labels_batches, dim=0) if labels_batches else torch.empty((0, 0), dtype=torch.long)
+
+    if labels.numel() and tokenizer.pad_token_id is not None:
+        labels = torch.where(labels != -100, labels, torch.full_like(labels, tokenizer.pad_token_id))
 
     decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
     decoded_labels_original = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-    num_return_sequences = trainer.model.generation_config.num_return_sequences
+    num_return_sequences = model.generation_config.num_return_sequences
 
     decoded_preds_reshaped = [
         decoded_preds[j : j + num_return_sequences]
@@ -151,10 +172,10 @@ def run_selected_chunks(
 ):
     chunks = get_dataset_chunks(test_dataset, chunk_size)
     selected_set = set(selected_chunk_ids)
+    selected_chunks = [(chunk_id, subset) for chunk_id, subset in chunks if chunk_id in selected_set]
 
-    for chunk_id, subset in chunks:
-        if chunk_id in selected_set:
-            predict_chunk(chunk_id, subset, trainer, tokenizer, output_dir, csv_prefix)
+    for chunk_id, subset in tqdm(selected_chunks, desc="Evaluating chunks", unit="chunk"):
+        predict_chunk(chunk_id, subset, trainer, tokenizer, output_dir, csv_prefix)
 
 
 def main():
@@ -175,7 +196,7 @@ def main():
     parser.add_argument("--num_return_sequences", type=int, default=5)
     parser.add_argument("--max_new_tokens", type=int, default=220)
     parser.add_argument("--per_device_eval_batch_size", type=int, default=32)
-    parser.add_argument("--chunk_size", type=int, default=10000)
+    parser.add_argument("--chunk_size", type=int, default=100)
     parser.add_argument(
         "--chunks",
         default="all",
