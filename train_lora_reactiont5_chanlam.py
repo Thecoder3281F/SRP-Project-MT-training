@@ -53,6 +53,9 @@ def parse_args():
     )
     parser.add_argument("--weight_decay", type=float, default=0.01, help="Weight decay")
     parser.add_argument("--warmup_ratio", type=float, default=0.1, help="Warmup ratio")
+    parser.add_argument("--bf16", dest="bf16", action="store_true", help="Use bfloat16 training")
+    parser.add_argument("--no-bf16", dest="bf16", action="store_false", help="Disable bfloat16 training")
+    parser.set_defaults(bf16=True)
 
     parser.add_argument("--lora_r", type=int, default=16, help="LoRA rank (default 16)")
     parser.add_argument("--lora_alpha", type=int, default=32, help="LoRA alpha (default 32)")
@@ -169,6 +172,7 @@ def train_lora_model(
     lora_dropout: float,
     target_modules=None,
     save_merged_model: bool = False,
+    bf16: bool = True,
     seed: int = 42,
 ):
     model = AutoModelForSeq2SeqLM.from_pretrained(base_model)
@@ -191,6 +195,12 @@ def train_lora_model(
 
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
+
+    if bf16:
+        try:
+            model.bfloat16()
+        except Exception as e:
+            print(f"Warning: model.bfloat16() failed; continuing in full precision: {e}")
 
     def _post_train(trainer):
         run_suffix = f"{max_steps}steps" if max_steps is not None else f"{num_train_epochs:g}epochs"
@@ -236,6 +246,7 @@ def train_lora_model(
         warmup_ratio=warmup_ratio,
         weight_decay=weight_decay,
         early_stopping_threshold=early_stopping_threshold,
+        bf16=bf16,
         seed=seed,
         post_train_callback=_post_train,
     )
@@ -315,6 +326,7 @@ if __name__ == "__main__":
         lora_dropout=args.lora_dropout,
         target_modules=args.target_modules,
         save_merged_model=args.save_merged_model,
+        bf16=args.bf16,
         seed=args.seed,
     )
 
