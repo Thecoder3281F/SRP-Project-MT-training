@@ -49,6 +49,44 @@ This repository contains the code, preprocessing utilities, training scripts, an
 - Prefer small, well-named output directories for each experiment.
 - Remove notebook outputs before publishing.
 
+## Suggested training schedule
+
+For comparing row-count sweeps, use a fixed epoch budget and let steps scale with dataset size.
+This is closer to how fine-tuning is usually reported in papers than using the same `--max_steps`
+for every subset size.
+
+The table below assumes an effective batch size of 8. If auto batch sizing lowers your actual
+batch size, multiply the step counts by `8 / effective_batch_size`.
+
+| train_rows | recommended epochs | approx. max_steps |
+| --- | --- | --- |
+| 10 | 20 | 40 |
+| 50 | 20 | 140 |
+| 100 | 20 | 260 |
+| 500 | 20 | 1260 |
+| 1000 | 20 | 2500 |
+| 2000 | 20 | 5000 |
+| 4000 | 20 | 10000 |
+
+If you want a more aggressive overfit baseline for very small subsets, you can push the 10-row
+and 50-row runs higher, but keep the larger subsets on the same epoch budget so the comparison
+stays meaningful.
+
+## How to use early stopping
+
+Early stopping still needs a ceiling, either `--max_steps` or `--num_train_epochs`. In practice,
+set that ceiling high enough that the model can converge, then let validation stop the run early.
+
+That means:
+
+- the ceiling is a safety limit, not the thing you are trying to hit;
+- the best checkpoint should come from validation loss, not the final step;
+- if the run always ends exactly at the ceiling, the ceiling is probably too low;
+- if the run stops very early and validation never improves again, the ceiling was probably high enough.
+
+For your sweeps, a better pattern is to use the epoch counts above as the maximum budget, turn on early
+stopping, and compare the best validation checkpoint from each run.
+
 ## Before publishing
 
 - Confirm that no secrets, checkpoints, or large generated artifacts are tracked.
