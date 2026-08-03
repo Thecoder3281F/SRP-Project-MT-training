@@ -99,6 +99,21 @@ def get_dataset_chunks(dataset, chunk_size: int) -> List[Tuple[int, any]]:
     return chunks
 
 
+def concat_padded_batches(batches: List[torch.Tensor], pad_value: int) -> torch.Tensor:
+    if not batches:
+        return torch.empty((0, 0), dtype=torch.long)
+
+    max_width = max(batch.shape[-1] for batch in batches)
+    padded_batches = []
+
+    for batch in batches:
+        if batch.shape[-1] < max_width:
+            batch = torch.nn.functional.pad(batch, (0, max_width - batch.shape[-1]), value=pad_value)
+        padded_batches.append(batch)
+
+    return torch.cat(padded_batches, dim=0)
+
+
 def predict_chunk(
     chunk_id: int,
     subset,
@@ -126,8 +141,9 @@ def predict_chunk(
         if labels is not None:
             labels_batches.append(labels.detach().cpu())
 
-    preds = torch.cat(preds_batches, dim=0) if preds_batches else torch.empty((0, 0), dtype=torch.long)
-    labels = torch.cat(labels_batches, dim=0) if labels_batches else torch.empty((0, 0), dtype=torch.long)
+    pred_pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+    preds = concat_padded_batches(preds_batches, pred_pad_token_id)
+    labels = concat_padded_batches(labels_batches, -100)
 
     if labels.numel() and tokenizer.pad_token_id is not None:
         labels = torch.where(labels != -100, labels, torch.full_like(labels, tokenizer.pad_token_id))
