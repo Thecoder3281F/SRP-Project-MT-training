@@ -25,7 +25,7 @@ def parse_args():
         "--train_rows",
         type=int,
         default=None,
-        choices=[10, 50, 100, 500, 1000, 2000, 4000],
+        choices=[10, 50, 100, 250, 500, 1000, 2000, 4000],
         help="Row-count subset to train on from the HF parquet files (e.g. 10 -> train_rows_10-00000-of-00001.parquet). Required unless --use_full_train_split is set.",
     )
     parser.add_argument(
@@ -76,7 +76,8 @@ def parse_args():
     parser.add_argument("--use_early_stopping", action="store_true", help="Whether to use early stopping")
     parser.add_argument("--early_stopping_patience", type=int, default=3, help="Early stopping patience")
     parser.add_argument("--early_stopping_threshold", type=float, default=0, help="Early stopping threshold")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility (default 42)")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility for train and eval loops only (default 42)")
+    parser.add_argument("--dataset_seed", type=int, default=123, help="Seed used for dataset splits (default 123)")
 
     parser.add_argument(
         "--save_merged_model",
@@ -280,7 +281,7 @@ if __name__ == "__main__":
         ds_train = cast(Dataset, load_dataset("Thecoder3281f/chanlam-dataset", split="train"))
     else:
         train_data_file = (
-            f"hf://datasets/Thecoder3281f/chanlam-dataset-splits/data/"
+            f"hf://datasets/Thecoder3281f/chanlam-dataset-splits-seed{args.dataset_seed}/data/"
             f"train_rows_{args.train_rows}-00000-of-00001.parquet"
         )
         print(f"Loading training subset file: {train_data_file}")
