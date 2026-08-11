@@ -1,0 +1,1 @@
+train250.bat && train500.bat && train1000.bat && train2000.bat && train4000.bat && trainfull.bat

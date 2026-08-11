@@ -25,7 +25,7 @@ def parse_args():
         "--train_rows",
         type=int,
         default=None,
-        choices=[10, 50, 100, 500, 1000, 2000, 4000],
+        choices=[10, 50, 100, 250, 500, 1000, 2000, 4000],
         help="Row-count subset to train on from the HF parquet files (e.g. 10 -> train_rows_10-00000-of-00001.parquet). Required unless --use_full_train_split is set.",
     )
     parser.add_argument(

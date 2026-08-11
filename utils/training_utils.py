@@ -6,6 +6,7 @@ from transformers import (
     Seq2SeqTrainingArguments,
     EarlyStoppingCallback,
     AutoTokenizer,
+    TrainerCallback,
     set_seed,
 )
 
@@ -57,7 +58,18 @@ def compute_metrics(eval_pred, tokenizer):
     return {"accuracy": acc}
 
 
+from transformers import TrainerCallback
 
+class EvalEveryNEpochs(TrainerCallback):
+    def __init__(self, n):
+        self.n = n
+
+    def on_epoch_end(self, args, state, control, **kwargs):
+        if int(state.epoch) % self.n == 0:
+            control.should_evaluate = True
+        else:
+            control.should_evaluate = False
+        return control
 
 def train_t5_model(
     model,
@@ -83,7 +95,7 @@ def train_t5_model(
     save_total_limit: int = 3,
     predict_with_generate: bool = False,
     seed: int = 42,
-    dataloader_num_workers: int = 4,
+    dataloader_num_workers: int = 0,
     dataloader_pin_memory: bool = True,
     max_grad_norm: float = 1.0,
     logging_steps: int | None = None,
@@ -117,6 +129,9 @@ def train_t5_model(
                 early_stopping_threshold=early_stopping_threshold,
             )
         )
+
+    if not use_steps_schedule and num_train_epochs is not None:
+        callbacks.append(EvalEveryNEpochs(n=num_train_epochs // 30))  # Evaluate every `num_train_epochs` epochs if using epoch-based schedule
 
     # compute sensible default logging_steps if not provided
     if logging_steps is None:
