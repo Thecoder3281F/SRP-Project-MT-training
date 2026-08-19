@@ -4,5 +4,6 @@ python train_lora_reactiont5_chanlam.py ^
     --num_train_epochs 15 ^
     --use_early_stopping ^
     --seed 42 ^
-    --train_rows 4000
+    --train_rows 4000 ^
+    --resume_checkpoint
 

@@ -131,7 +131,7 @@ def train_t5_model(
         )
 
     if not use_steps_schedule and num_train_epochs is not None:
-        callbacks.append(EvalEveryNEpochs(n=num_train_epochs // 30))  # Evaluate every `num_train_epochs` epochs if using epoch-based schedule
+        callbacks.append(EvalEveryNEpochs(n=max(1, num_train_epochs // 30)))  # Evaluate every `num_train_epochs` epochs if using epoch-based schedule
 
     # compute sensible default logging_steps if not provided
     if logging_steps is None:
