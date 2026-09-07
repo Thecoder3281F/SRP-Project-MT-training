@@ -56,6 +56,39 @@ def make_split_name(path: Path):
     return name
 
 
+def normalize_split_schema(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure split CSVs have consistent string dtypes for optional reaction fields.
+
+    Hugging Face DatasetDict requires the same feature schema across all splits.
+    Missing values in optional columns such as additive/base/catalyst/solvent can
+    otherwise be inferred as float64 in some files and string in others.
+    """
+    df = df.copy()
+
+    # Drop any auto-generated index columns from CSV exports.
+    unnamed_cols = [c for c in df.columns if c.startswith("Unnamed:")]
+    if unnamed_cols:
+        df = df.drop(columns=unnamed_cols)
+
+    optional_string_cols = [
+        "additive",
+        "base",
+        "catalyst",
+        "solvent",
+        "reactant_1",
+        "reactant_2",
+        "reactants",
+        "reagents",
+        "product",
+        "_group_key",
+    ]
+    for col in optional_string_cols:
+        if col in df.columns:
+            df[col] = df[col].fillna("").astype(str)
+
+    return df
+
+
 def main():
     p = argparse.ArgumentParser(description="Push CSV split files to a Hugging Face dataset repo")
     p.add_argument("--input-dir", required=True, help="Directory containing CSV split files")
@@ -85,10 +118,7 @@ def main():
         split_name = make_split_name(fp)
         logger.info("Reading %s -> split '%s'", fp.name, split_name)
         df = pd.read_csv(fp)
-        # drop unnamed index column if present
-        unnamed_cols = [c for c in df.columns if c.startswith("Unnamed:")]
-        if unnamed_cols:
-            df = df.drop(columns=unnamed_cols)
+        df = normalize_split_schema(df)
         df = df.reset_index(drop=True)
         # Convert to Hugging Face Dataset
         ds = Dataset.from_pandas(df)
