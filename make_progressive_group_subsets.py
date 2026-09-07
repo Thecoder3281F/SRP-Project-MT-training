@@ -36,7 +36,7 @@ except Exception:
     Chem = None
 
 
-DEFAULT_SIZES = [10, 50, 100, 250, 500, 1000, 2000, 5000]
+DEFAULT_SIZES = [10, 50, 100, 250, 500, 1000, 2000, 3000]
 
 
 def canonicalise_smiles(s: str) -> str:
