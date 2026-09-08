@@ -34,3 +34,4 @@ tokenizers/
 *.csv
 *.json
 _*/
+*.zip
